@@ -9,7 +9,7 @@
   <meta name="description" content="">
   <meta name="author" content="">
 
-  <title>Dapoer Evmuf</title>
+  <title>Backpropagation</title>
 
   <!-- Custom fonts for this template-->
   <link href="{{ url_for('static', filename='vendor/fontawesome-free/css/all.min.css')}}" rel="stylesheet" type="text/css">
@@ -20,7 +20,7 @@
   <link href="{{ url_for('static', filename='css/dropzone.min.css') }}" rel="stylesheet">
   <link href="{{ url_for('static', filename='css/datatables.min.css')}}" rel="stylesheet">
   <link href="{{ url_for('static', filename='css/daterangepicker.css')}}" rel="stylesheet">
-  <script src="{{ url_for('static', filename='js/jquery-3.7.1.min.js')}}"></script>
+  <script src="{{ url_for('static', filename='vendor/jquery/jquery.min.js')}}"></script>
   <script src="{{ url_for('static', filename='js/dropzone.min.js')}}"></script>
   <link href="{{ url_for('static', filename='css/splide.min.css')}}" rel="stylesheet">
   <script src="https://unpkg.com/gijgo@1.9.14/js/gijgo.min.js" type="text/javascript"></script>
@@ -32,8 +32,21 @@
 
 <body>
   <div id="page-wrapper">
+    <div class="topbar-wrapper">
+      <div class="topbar-logo">
+        <div class="sidebar-brand-text" style="font-weight: bold;">Backpropagation</div>
+      </div>
+      <div class="topbar-menu">
+        <a href="{{ url_for('views.home') }}" data-page="home" class="topbar-menu-link">Home</a>
+        <a href="{{ url_for('views.siswa') }}" data-page="siswa" class="topbar-menu-link">Siswa</a>
+        <a href="{{ url_for('views.mapel') }}" data-page="mapel" class="topbar-menu-link">Mata Pelajaran</a>
+        <a href="{{ url_for('views.nilai') }}" data-page="nilai" class="topbar-menu-link">Nilai</a>
+        <a href="{{ url_for('views.pelatihan') }}" data-page="pelatihan" class="topbar-menu-link">Pelatihan</a>
+        <a href="{{ url_for('views.prediksi') }}" data-page="prediksi" class="topbar-menu-link">Prediksi</a>
+      </div>
+    </div>
     <div class="content-wrapper">
-      {% block content %}{% endblock %}
+      {% block inside %}{% endblock %}
     </div>
   </div>
   <!-- End of Page Wrapper -->
@@ -63,27 +76,27 @@
   </div>
   {% block modal %}{% endblock %}
   <!-- Bootstrap core JavaScript-->
-  <script src="<?= base_url() ?>js/moment.min.js"></script>
+  <script src="{{ url_for('static', filename='js/moment.min.js') }}"></script>
 
-  <script src="<?= base_url() ?>js/datatables.min.js"></script>
-  <script src="<?= base_url() ?>js/sweetalert2@11.js"></script>
-  <script src="<?= base_url() ?>vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="{{ url_for('static', filename='js/datatables.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/sweetalert2@11.js') }}"></script>
+  <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
 
   <!-- Core plugin JavaScript-->
-  <script src="<?= base_url() ?>vendor/jquery-easing/jquery.easing.min.js"></script>
+  <script src="{{ url_for('static', filename='vendor/jquery-easing/jquery.easing.min.js') }}"></script>
 
   <!-- Custom scripts for all pages-->
-  <script src="<?= base_url() ?>js/jquery.waypoints.min.js"></script>
-  <script src="<?= base_url() ?>js/jquery.counterup.min.js"></script>
-  <script src="<?= base_url() ?>js/sb-admin-2.min.js"></script>
-  <script src="<?= base_url() ?>js/splide.min.js"></script>
+  <script src="{{ url_for('static', filename='js/jquery.waypoints.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/jquery.counterup.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/sb-admin-2.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/splide.min.js') }}"></script>
 
   <!-- Page level plugins -->
-  <script src="<?= base_url() ?>vendor/chart.js/Chart.min.js"></script>
-  <script src="<?= base_url() ?>js/daterangepicker.min.js"></script>
-  <script src="<?= base_url() ?>js/utils/puller.js"></script>
-  <script src="<?= base_url() ?>js/utils/jquery.validate.min.js"></script>
-  <script src="<?= base_url() ?>js/utils/additional-methods.min.js"></script>
+  <script src="{{ url_for('static', filename='vendor/chart.js/Chart.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/daterangepicker.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/utils/puller.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/utils/jquery.validate.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/utils/additional-methods.min.js') }}"></script>
 
   <!-- Page level custom scripts -->
 
@@ -110,6 +123,8 @@
     const dt = new DataTable('.init-datatables', {
       responsive: true
     });
+    let page = "{{ page }}";
+    const baseUrl = origin;
     $("body").on("click", ".btn-slider", function(e) {
       e.preventDefault();
       const pg = $(this).data("slider");
@@ -119,15 +134,14 @@
       $(this).closest(".page-slider").removeClass("active");
     });
   </script>
-  <script src="<?= base_url() ?>js/pages/keranjang_var.js"></script>
-  <script src="<?= base_url() ?>js/main.js"></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   <script>
     $(document).ready(function() {
       $(".topbar-menu-link").removeClass("active");
       $(".topbar-menu-link[data-page='" + page + "']").addClass("active");
     });
   </script>
-  <?= $this->renderSection('script') ?>
+  {% block script %}{% endblock %}
 </body>
 
 </html>

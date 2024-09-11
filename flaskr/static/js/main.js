@@ -1,256 +1,79 @@
-M.AutoInit();
-$(".datepicker").datepicker({
-  format: "dd/mm/yyyy",
-  i18n: {
-    months: ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"],
-    monthsShort: ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agt", "Sep", "Okt", "Nov", "Des"],
-    weekdays: ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jum'at", "Sabtu"],
-    weekdaysShort: ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"],
-    weekdaysAbbrev: ["M", "S", "S", "R", "K", "J", "S"],
-  },
-  defaultDate: new Date("2000-01-10"),
-});
-const Toast = Swal.mixin({
-  toast: true,
-  position: "top-end",
-  showConfirmButton: false,
-  timer: 3000,
-  timerProgressBar: true,
-  didOpen: (toast) => {
-    toast.onmouseenter = Swal.stopTimer;
-    toast.onmouseleave = Swal.resumeTimer;
-  },
-});
-
-const capEachWord = (a) => {
-  return a
-    .toLowerCase()
-    .split(" ")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-};
-
-var $jscomp = $jscomp || {};
-$jscomp.scope = {};
-$jscomp.findInternal = function (a, b, c) {
-  a instanceof String && (a = String(a));
-  for (var e = a.length, d = 0; d < e; d++) {
-    var f = a[d];
-    if (b.call(c, f, d, a)) return { i: d, v: f };
+$("body").on("click", ".katalog-item", function (e) {
+  if ($(e.target).hasClass("sewa") || $(e.target).parent().hasClass("sewa")) {
+    e.preventDefault();
+    return;
   }
-  return { i: -1, v: void 0 };
-};
-$jscomp.ASSUME_ES5 = !1;
-$jscomp.ASSUME_NO_NATIVE_MAP = !1;
-$jscomp.ASSUME_NO_NATIVE_SET = !1;
-$jscomp.SIMPLE_FROUND_POLYFILL = !1;
-$jscomp.ISOLATE_POLYFILLS = !1;
-$jscomp.defineProperty =
-  $jscomp.ASSUME_ES5 || "function" == typeof Object.defineProperties
-    ? Object.defineProperty
-    : function (a, b, c) {
-        if (a == Array.prototype || a == Object.prototype) return a;
-        a[b] = c.value;
-        return a;
-      };
-$jscomp.getGlobal = function (a) {
-  a = ["object" == typeof globalThis && globalThis, a, "object" == typeof window && window, "object" == typeof self && self, "object" == typeof global && global];
-  for (var b = 0; b < a.length; ++b) {
-    var c = a[b];
-    if (c && c.Math == Math) return c;
-  }
-  throw Error("Cannot find global object");
-};
-$jscomp.global = $jscomp.getGlobal(this);
-$jscomp.IS_SYMBOL_NATIVE = "function" === typeof Symbol && "symbol" === typeof Symbol("x");
-$jscomp.TRUST_ES6_POLYFILLS = !$jscomp.ISOLATE_POLYFILLS || $jscomp.IS_SYMBOL_NATIVE;
-$jscomp.polyfills = {};
-$jscomp.propertyToPolyfillSymbol = {};
-$jscomp.POLYFILL_PREFIX = "$jscp$";
-var $jscomp$lookupPolyfilledValue = function (a, b) {
-  var c = $jscomp.propertyToPolyfillSymbol[b];
-  if (null == c) return a[b];
-  c = a[c];
-  return void 0 !== c ? c : a[b];
-};
-$jscomp.polyfill = function (a, b, c, e) {
-  b && ($jscomp.ISOLATE_POLYFILLS ? $jscomp.polyfillIsolated(a, b, c, e) : $jscomp.polyfillUnisolated(a, b, c, e));
-};
-$jscomp.polyfillUnisolated = function (a, b, c, e) {
-  c = $jscomp.global;
-  a = a.split(".");
-  for (e = 0; e < a.length - 1; e++) {
-    var d = a[e];
-    if (!(d in c)) return;
-    c = c[d];
-  }
-  a = a[a.length - 1];
-  e = c[a];
-  b = b(e);
-  b != e && null != b && $jscomp.defineProperty(c, a, { configurable: !0, writable: !0, value: b });
-};
-$jscomp.polyfillIsolated = function (a, b, c, e) {
-  var d = a.split(".");
-  a = 1 === d.length;
-  e = d[0];
-  e = !a && e in $jscomp.polyfills ? $jscomp.polyfills : $jscomp.global;
-  for (var f = 0; f < d.length - 1; f++) {
-    var l = d[f];
-    if (!(l in e)) return;
-    e = e[l];
-  }
-  d = d[d.length - 1];
-  c = $jscomp.IS_SYMBOL_NATIVE && "es6" === c ? e[d] : null;
-  b = b(c);
-  null != b &&
-    (a
-      ? $jscomp.defineProperty($jscomp.polyfills, d, { configurable: !0, writable: !0, value: b })
-      : b !== c &&
-        (($jscomp.propertyToPolyfillSymbol[d] = $jscomp.IS_SYMBOL_NATIVE ? $jscomp.global.Symbol(d) : $jscomp.POLYFILL_PREFIX + d),
-        (d = $jscomp.propertyToPolyfillSymbol[d]),
-        $jscomp.defineProperty(e, d, { configurable: !0, writable: !0, value: b })));
-};
-$jscomp.polyfill(
-  "Array.prototype.find",
-  function (a) {
-    return a
-      ? a
-      : function (b, c) {
-          return $jscomp.findInternal(this, b, c).v;
-        };
-  },
-  "es6",
-  "es3"
-);
-(function (a) {
-  "function" === typeof define && define.amd
-    ? define(["jquery", "datatables.net"], function (b) {
-        return a(b, window, document);
-      })
-    : "object" === typeof exports
-    ? (module.exports = function (b, c) {
-        b || (b = window);
-        (c && c.fn.dataTable) || (c = require("datatables.net")(b, c).$);
-        return a(c, b, b.document);
-      })
-    : a(jQuery, window, document);
-})(function (a, b, c, e) {
-  var d = a.fn.dataTable;
-  a.extend(!0, d.defaults, {
-    dom: "<'row'<'col s12 m6'l><'col s12 m6'f>><'row'<'col s12'tr>><'row'<'col s12 m12'i><'col s12 m12 center'p>>",
-    renderer: "materializecss",
-  });
-  a.extend(d.ext.classes, { sWrapper: "dataTables_wrapper", sFilterInput: "", sLengthSelect: "", sProcessing: "dataTables_processing", sPageButton: "" });
-  d.ext.renderer.pageButton.materializecss = function (f, l, A, B, m, t) {
-    var u = new d.Api(f),
-      C = f.oClasses,
-      n = f.oLanguage.oPaginate,
-      D = f.oLanguage.oAria.paginate || {},
-      h,
-      k,
-      v = 0,
-      y = function (q, w) {
-        var x,
-          E = function (p) {
-            p.preventDefault();
-            a(p.currentTarget).hasClass("disabled") || u.page() == p.data.action || u.page(p.data.action).draw("page");
-          };
-        var r = 0;
-        for (x = w.length; r < x; r++) {
-          var g = w[r];
-          if (Array.isArray(g)) y(q, g);
-          else {
-            k = h = "";
-            switch (g) {
-              case "ellipsis":
-                h = "&#x2026;";
-                k = "disabled";
-                break;
-              case "first":
-                h = n.sFirst;
-                k = g + (0 < m ? "" : " disabled");
-                break;
-              case "previous":
-                h = n.sPrevious;
-                k = g + (0 < m ? "" : " disabled");
-                break;
-              case "next":
-                h = n.sNext;
-                k = g + (m < t - 1 ? "" : " disabled");
-                break;
-              case "last":
-                h = n.sLast;
-                k = g + (m < t - 1 ? "" : " disabled");
-                break;
-              default:
-                (h = g + 1), (k = m === g ? "active" : "");
-            }
-            if (h) {
-              var F = a("<li>", { class: C.sPageButton + " " + k, id: 0 === A && "string" === typeof g ? f.sTableId + "_" + g : null })
-                .append(a("<a>", { href: "#", "aria-controls": f.sTableId, "aria-label": D[g], "data-dt-idx": v, tabindex: f.iTabIndex, class: "" }).html(h))
-                .appendTo(q);
-              f.oApi._fnBindAction(F, { action: g }, E);
-              v++;
-            }
-          }
-        }
-      };
-    try {
-      var z = a(l).find(c.activeElement).data("dt-idx");
-    } catch (q) {}
-    y(a(l).empty().html('<ul class="pagination"/>').children("ul"), B);
-    z !== e &&
-      a(l)
-        .find("[data-dt-idx=" + z + "]")
-        .trigger("focus");
-  };
-  return d;
+  let alat = cloud.get("alat").find((a) => a.id == $(e.currentTarget).data("id"));
+  console.log(alat);
+  $(".slide-image img").attr("src", alat.gambar);
+  $(".slide-image .kategori").text(alat.kategori.label);
+  $(".slide-content h4").text(alat.nama);
+  $(".slide-content .slide-text").html(alat.deskripsi.replace(new RegExp("\r?\n", "g"), "<br />"));
+  $(".slide-content .nominal").text(alat.harga.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."));
+  $(".slide-content .stok").text(alat.stok);
+  $(".slide-wrapper").addClass("active");
+  $(".slide-button .sewa").attr("data-id", alat.id);
+  alat.stok > 0 ? $(".slide-button a").removeClass("disabled") : $(".slide-button a").addClass("disabled");
+  setTimeout(function () {
+    $(".slide").css("right", "0%");
+  }, 100);
 });
-
-$.ajaxSetup({
-  headers: {
-    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
-  },
+$("body").on("click", ".slide-close", function (e) {
+  $(".slide").css("right", "-100%");
+  setTimeout(function () {
+    $(".slide-wrapper").removeClass("active");
+  }, 100);
 });
-
-$("body").on("click", ".btn-slider", function (e) {
-  e.preventDefault();
-  const page = $(this).attr("data-page");
-  $(".page-slider[data-page=" + page + "]").addClass("active");
-});
-
-$("body").on("click", ".btn-slider-close", function (e) {
-  e.preventDefault();
-  $(this).closest(".page-slider").removeClass("active");
-});
-
-$("body").on("click", ".btn-logout", function (e) {
-  e.preventDefault();
-  Swal.fire({
-    title: "Keluar",
-    text: "Apakah anda yakin ingin keluar?",
-    icon: "warning",
+$("body").on("click", ".sewa", async function (e) {
+  const id = $(e.currentTarget).data("id");
+  let alat = cloud.get("alat").find((a) => a.id == id);
+  let val = 1;
+  if (keranjangBarang.getItem(id)) val = keranjangBarang.getItem(id);
+  console.log(val);
+  const { value: jumlah } = await Swal.fire({
+    title: "Mau sewa berapa?",
+    icon: "question",
+    input: "range",
+    inputLabel: "masukkan jumlah",
     showCancelButton: true,
-    confirmButtonColor: "#d33",
-    cancelButtonColor: "#3085d6",
-    confirmButtonText: "Keluar",
-    cancelButtonText: "Batal",
-  }).then((result) => {
-    if (result.isConfirmed) {
-      $.ajax({
-        type: "GET",
-        url: origin + "/logout",
-        success: function () {
-          window.location.href = origin + "/login";
-        }
-      });
-    }
+    inputAttributes: {
+      min: "1",
+      max: alat.stok,
+      step: "1",
+    },
+    inputValue: val,
   });
+  if (jumlah) {
+    keranjangBarang.setItem(id, jumlah);
+  }
 });
 
-$(document).ready(function () {
-  $(".datatables-init").DataTable();
-  $("select").formSelect();
-  $(".nav-link").removeClass("active");
-  $(".nav-link[data-page=" + page + "]").addClass("active");
+$("body > div.slide-wrapper").on("click", function (e) {
+  if ($(e.target).closest(".slide").length > 0) {
+    e.preventDefault();
+    return;
+  }
+  $(".slide-close").trigger("click");
+});
+
+$(document).ready(async function () {
+  const activeMenu = $(`.menu-list[data-id='${page}']`);
+  activeMenu.addClass("active");
+  if (activeMenu.hasClass("collapse-item")) {
+    activeMenu.closest(".collapse").addClass("show");
+    activeMenu.closest(".nav-link").removeClass("collapsed");
+    activeMenu.closest(".nav-item").addClass("active");
+  }
+});
+
+$("body").on("click", ".btn-password", function (e) {
+  e.preventDefault();
+  const inputEl = $(this).closest(".form-group").find("input");
+  if (inputEl.attr("type") == "password") {
+    inputEl.attr("type", "text");
+    $(this).find("i").addClass("fa-eye-slash").removeClass("fa-eye");
+  } else {
+    inputEl.attr("type", "password");
+    $(this).find("i").addClass("fa-eye").removeClass("fa-eye-slash");
+  }
 });

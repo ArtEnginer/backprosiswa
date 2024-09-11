@@ -20,18 +20,25 @@ def home():
         page="home",
     )
 
-@views.route("/obat")
-def obat():
+@views.route("/siswa")
+def siswa():
     return render_template(
-        "page/obat.html",
-        page="obat",
+        "page/siswa.html",
+        page="siswa",
     )
 
-@views.route("/mutasi")
-def mutasi():
+@views.route("/mapel")
+def mapel():
     return render_template(
-        "page/mutasi.html",
-        page="mutasi",
+        "page/mapel.html",
+        page="mapel",
+    )
+
+@views.route("/nilai")
+def nilai():
+    return render_template(
+        "page/nilai.html",
+        page="nilai",
     )
 
 @views.route("/pelatihan")
