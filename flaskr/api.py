@@ -1,16 +1,16 @@
 import email
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
 from . import db
-from .models import Siswa, Mapel, Nilai, Models, Results, User
+from .models import Siswa, Mapel, Nilai, NilaiUjian,Jurusan, Models, Results, User
 import numpy as np
-from sklearn.model_selection import KFold
 from flask_login import login_user, logout_user, login_required, current_user
-from sklearn import tree
-from sklearn.naive_bayes import GaussianNB, BernoulliNB, MultinomialNB, CategoricalNB, ComplementNB
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, roc_curve, auc
 import os
 import pickle
 import json
+from sklearn.neural_network import MLPRegressor
+from sklearn.datasets import make_regression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
 
 api = Blueprint("api", __name__)
 
@@ -52,7 +52,63 @@ def siswa():
             "title": "Data baru berhasil ditambahkan"
         }, "data": data.serialize()}, 200
 
-    data = siswa.query.all()
+    data = Siswa.query.all()
+    return {"data": [k.serialize() for k in data]}, 200
+
+@api.route("/mapel", methods=["GET", "POST"])
+def mapel():
+    if request.method == 'POST':
+        data = Mapel(nama=request.form.get("nama"), kode=request.form.get("kode"))
+        db.session.add(data)
+        db.session.commit()
+        return {"toast": {
+            "icon": "success",
+            "title": "Data baru berhasil ditambahkan"
+        }, "data": data.serialize()}, 200
+
+    data = Mapel.query.all()
+    return {"data": [k.serialize() for k in data]}, 200
+
+@api.route("/nilai", methods=["GET", "POST"])
+def nilai():
+    if request.method == 'POST':
+        data = Nilai(siswa_id=request.form.get("id_siswa"), mapel_id=request.form.get("id_mapel"), kkm=request.form.get("semester"), nilai=request.form.get("nilai"))
+        db.session.add(data)
+        db.session.commit()
+        return {"toast": {
+            "icon": "success",
+            "title": "Data baru berhasil ditambahkan"
+        }, "data": data.serialize()}, 200
+
+    data = Nilai.query.all()
+    return {"data": [k.serialize() for k in data]}, 200
+
+@api.route("/ujian", methods=["GET", "POST"])
+def ujian():
+    if request.method == 'POST':
+        data = NilaiUjian(id_siswa=request.form.get("id_siswa"), id_mapel=request.form.get("id_mapel"), nilai=request.form.get("nilai"))
+        db.session.add(data)
+        db.session.commit()
+        return {"toast": {
+            "icon": "success",
+            "title": "Data baru berhasil ditambahkan"
+        }, "data": data.serialize()}, 200
+
+    data = NilaiUjian.query.all()
+    return {"data": [k.serialize() for k in data]}, 200
+
+@api.route("/jurusan", methods=["GET", "POST"])
+def jurusan():
+    if request.method == 'POST':
+        data = Jurusan(nama=request.form.get("nama"), kode=request.form.get("kode"))
+        db.session.add(data)
+        db.session.commit()
+        return {"toast": {
+            "icon": "success",
+            "title": "Data baru berhasil ditambahkan"
+        }, "data": data.serialize()}, 200
+
+    data = Jurusan.query.all()
     return {"data": [k.serialize() for k in data]}, 200
 
 
@@ -85,45 +141,45 @@ def siswabyid(id):
 @api.route("/pelatihan", methods=["GET", "POST"])
 def pelatihan():
     if request.method == 'POST':
-        pelatihan = Models(nama=request.form.get("nama"), algoritma=request.form.get(
-            "algoritma"), kfold=request.form.get("kfold"))
+        pelatihan = Models(nama=request.form.get("nama"), testsize=float(request.form.get("testsize")), max_iter=int(request.form.get("max_iter")), learning_rate=float(request.form.get("learning_rate")))
         db.session.add(pelatihan)
         db.session.flush()
         db.session.refresh(pelatihan)
-        data = Balita.query.all()
-        X = []
-        y = []
-        for i in data:
-            X.append([i.bb, i.tb])
-            y.append(i.status)
-        kf = KFold(n_splits=int(pelatihan.kfold))
-        best_akurasi = 0
-        best_model = None
-        fold = 1
-        for train_index, test_index in kf.split(X):
-            X_train, X_test = np.array(X)[train_index], np.array(X)[test_index]
-            y_train, y_test = np.array(y)[train_index], np.array(y)[test_index]
-            if pelatihan.algoritma == "c45":
-                clf = tree.DecisionTreeClassifier(
-                    random_state=0, criterion='entropy')
-            elif pelatihan.algoritma == "nb":
-                clf = BernoulliNB()
-            clf = clf.fit(X_train, y_train)
-            y_pred = clf.predict(X_test)
-            cm = classification_report(y_test, y_pred, output_dict=True)
-            akurasi = round(accuracy_score(y_test, y_pred), 2)
-            result = Results(id_model=pelatihan.id, fold=fold, akurasi=akurasi, presisi=cm["weighted avg"]["precision"], recall=cm["weighted avg"][
-                "recall"], f1score=cm["weighted avg"]["f1-score"], support=cm["weighted avg"]["support"], testindex=json.dumps(test_index.tolist()), trainindex=json.dumps(train_index.tolist()), y_true=json.dumps(y_test.tolist
-                                                                                                                                                                                                                    ()), y_pred=json.dumps(y_pred.tolist()))
-            if akurasi > best_akurasi:
-                best_akurasi = akurasi
-                best_model = clf
-            fold += 1
-            db.session.add(result)
-        db.session.commit()
-
-        pelatihan.akurasi = best_akurasi
-        pickle.dump(best_model, open(f"models/{pelatihan.nama}.pkl", 'wb'))
+        siswa = Siswa.query.all()
+        mapel = Mapel.query.all()
+        jurusan = Jurusan.query.all()
+        nilai = Nilai.query.all()
+        ujian = NilaiUjian.query.all()
+        best_loss = 99999
+        losses = {}
+        for m in mapel:
+            X = []
+            y = []
+            for s in siswa:
+                row = []
+                for smt in range(4):
+                    for n in nilai:
+                        if n.id_siswa == s.id and n.id_mapel == m.id and n.semester == (smt + 1):
+                            row.append(n.nilai)
+                for u in ujian:
+                    if u.id_siswa == s.id and u.id_mapel == m.id:
+                        y.append(u.nilai)
+                X.append(row)
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=pelatihan.testsize, shuffle=False)
+            backpropagation = MLPRegressor(random_state=1, max_iter=pelatihan.max_iter, learning_rate_init=pelatihan.learning_rate).fit(X_train, y_train)
+            y_pred = backpropagation.predict(X_test)
+            loss = mean_squared_error(y_test, y_pred)
+            if loss < best_loss:
+                best_loss = loss
+            losses[m.kode] = backpropagation.loss_curve_
+            pickle.dump(backpropagation, open(f"train/{pelatihan.nama}-{m.kode}.pkl", 'wb')) 
+            # return {"toast": {
+            #     "icon": "success",
+            #     "title": "Data baru berhasil ditambahkan"
+            # }, "data": [X_train, X_test, y_train, y_test]}, 200
+        # db.session.commit()
+        pelatihan.best_loss = best_loss
+        pelatihan.losses = json.dumps(losses)
         db.session.commit()
         return {"toast": {
             "icon": "success",
@@ -218,18 +274,19 @@ def userbyid(id):
 @api.route("/prediksi", methods=["POST"])
 def prediksi():
     data = Models.query.get(request.form.get("id_model"))
+    mapel = Mapel.query.get(request.form.get("id_mapel"))
     if data == None:
         return {"toast": {
             "icon": "error",
             "title": "Data tidak ditemukan"
         }}, 404
-    data.bb = request.form.get("bb")
-    data.tb = request.form.get("tb")
-    data.bb = float(data.bb)
-    data.tb = float(data.tb)
-    model = pickle.load(open(f"models/{data.nama}.pkl", 'rb'))
-    data.status = model.predict([[data.bb, data.tb]])[0]
+    smt1 = float(request.form.get("nilai1"))
+    smt2 = float(request.form.get("nilai2"))
+    smt3 = float(request.form.get("nilai3"))
+    smt4 = float(request.form.get("nilai4"))
+    model = pickle.load(open(f"train/{data.nama}-{mapel.kode}.pkl", 'rb'))
+    data.status = model.predict([[smt1, smt2, smt3, smt4]])[0]
     return {"toast": {
         "icon": "success",
         "title": "Data berhasil diprediksi"
-    }, "data": data.serialize(), "status": data.status}, 200
+    }, "data": data.serialize(), "prediksi": data.status}, 200

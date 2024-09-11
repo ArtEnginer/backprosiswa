@@ -32,3 +32,4 @@ WTForms==3.0.1
 sqlalchemy_easy_softdelete==0.8.3
 SQLAlchemy-serializer
 flask_cors
+tensorflow
