@@ -1,0 +1,51 @@
+{% extends "layout/auth.html" %}
+{% block content %}
+<div class="center">
+    <img src="{{ url_for('static', filename='img/logo_light.png') }}" alt="logo" class="responsive-img" width="200">
+</div>
+<form method="POST" id="login-page" action="{{ url_for('api.login') }}">
+    <div class="card-panel z-depth-5">
+        <div class="row margin">
+            <div class="col s12 m12 l12 center">
+                <h5>Masuk</h5>
+            </div>
+        </div>
+
+        <!-- Form Username Input Section -->
+
+        <div class="col s12 m12 l12">
+            <div class="input-field">
+                <i class="material-icons prefix">person</i>
+                <input type="text" name="username" id="username" required>
+                <label for="username">Username</label>
+            </div>
+        </div>
+
+        <!-- Form Password Input Section -->
+
+        <div class="col m12 l12">
+            <div class="input-field">
+                <i class="material-icons prefix">lock</i>
+                <input type="password" name="password" id="password" required>
+                <label for="password">Password</label>
+            </div>
+        </div>
+
+        <!-- Form Chekbox (Remember Me) Input Section -->
+
+        <div class="left">
+            <label>
+                <input type="checkbox" name="rememberMe" />
+                <span>Ingat Saya</span>
+            </label>
+        </div>
+        <br><br>
+
+        <!-- Form Button Section  -->
+
+        <div class="center">
+            <button type="submit" class="btn waves-effect waves-light green">Masuk</button>
+        </div>
+    </div>
+</form>
+{% endblock %}

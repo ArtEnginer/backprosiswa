@@ -1,0 +1,26 @@
+html,
+body {
+  height: 100vh;
+  width: 100vw;
+  overflow: auto;
+}
+body {
+  vertical-align: middle;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-image: url("../img/bg.png");
+  background-position: top;
+}
+
+#login-page {
+  margin: 3rem auto 0;
+  max-width: 28rem;
+  width: 90%;
+}
+
+.card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
