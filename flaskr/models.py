@@ -31,7 +31,7 @@ Base = declarative_base()
 
 
 class User(db.Model, UserMixin, SerializerMixin):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     email = db.Column(db.String(150), unique=True)
     username = db.Column(db.String(150), unique=True)
     name = db.Column(db.String(150))
@@ -65,15 +65,33 @@ class User(db.Model, UserMixin, SerializerMixin):
 
 
 class AuthGroup(db.Model, SerializerMixin):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.Text, nullable=False)
 
 
 class Siswa(db.Model, SerializerMixin, SoftDeleteMixin):
     __tablename__ = "siswa"
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id_jurusan = db.Column(db.Integer)
     nama = db.Column(db.Text, nullable=False)
-    kode = db.Column(db.Text, nullable=False)
+    nisn = db.Column(db.Text, nullable=True)
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "id_jurusan": self.id_jurusan,
+            "nama": self.nama,
+            "nisn": self.nisn,
+        }
+
+    def toList(self):
+        return [self.id, self.id_jurusan, self.nama, self.nisn]
+    
+class Jurusan(db.Model, SerializerMixin, SoftDeleteMixin):
+    __tablename__ = "jurusan"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    nama = db.Column(db.Text, nullable=False)
+    kode = db.Column(db.Text, nullable=True)
 
     def serialize(self):
         return {
@@ -81,15 +99,12 @@ class Siswa(db.Model, SerializerMixin, SoftDeleteMixin):
             "nama": self.nama,
             "kode": self.kode,
         }
-
-    def toList(self):
-        return [self.id, self.nama, self.kode]
     
 class Mapel(db.Model, SerializerMixin, SoftDeleteMixin):
     __tablename__ = "mapel"
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     nama = db.Column(db.Text, nullable=False)
-    kode = db.Column(db.Text, nullable=False)
+    kode = db.Column(db.Text, nullable=True)
 
     def serialize(self):
         return {
@@ -99,12 +114,12 @@ class Mapel(db.Model, SerializerMixin, SoftDeleteMixin):
         }
 
 class Nilai(db.Model, SerializerMixin, SoftDeleteMixin):
-    __tablename__ = "mutasi"
-    id = db.Column(db.Integer, primary_key=True)
+    __tablename__ = "nilai"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     id_siswa = db.Column(db.Integer, nullable=False)
     id_mapel = db.Column(db.Integer, nullable=False)
     semester = db.Column(db.Integer, nullable=True)
-    nilai = db.Column(db.Text, nullable=True)
+    nilai = db.Column(db.Float, nullable=True)
 
     def serialize(self):
         return {
@@ -117,29 +132,52 @@ class Nilai(db.Model, SerializerMixin, SoftDeleteMixin):
 
     def toList(self):
         return [self.id, self.id_siswa, self.id_mapel, self.semester, self.nilai]
+    
+class NilaiUjian(db.Model, SerializerMixin, SoftDeleteMixin):
+    __tablename__ = "nilai_ujian"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id_siswa = db.Column(db.Integer, nullable=False)
+    id_mapel = db.Column(db.Integer, nullable=False)
+    nilai = db.Column(db.Float, nullable=True)
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "id_siswa": self.id_siswa,
+            "id_mapel": self.id_mapel,
+            "nilai": self.nilai,
+        }
+
+    def toList(self):
+        return [self.id, self.id_siswa, self.id_mapel, self.nilai]
 
 
 class Models(db.Model, SerializerMixin, SoftDeleteMixin):
     __tablename__ = "models"
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     nama = db.Column(db.Text, nullable=False)
     testsize = db.Column(db.Float, nullable=True)
-    n = db.Column(db.Integer, nullable=True)
+    max_iter = db.Column(db.Integer, nullable=True)
+    learning_rate = db.Column(db.Float, nullable=True)
+    losses = db.Column(db.Text, nullable=True)
+    best_loss = db.Column(db.Float, nullable=True)
 
     def serialize(self):
         return {
             "id": self.id,
             "nama": self.nama,
             "testsize": self.testsize,
-            "n": self.n
+            "max_iter": self.max_iter,
+            "learning_rate": self.learning_rate,
+            "losses": self.losses,
+            "best_loss": self.best_loss
         }
 
 
 class Results(db.Model, SerializerMixin, SoftDeleteMixin):
     __tablename__ = "results"
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     id_model = db.Column(db.Integer, nullable=False)
-    id_nilai = db.Column(db.Integer, nullable=False)
     rmse = db.Column(db.Float, nullable=True)
     mape = db.Column(db.Float, nullable=True)
     testindex = db.Column(db.Text, nullable=True)
@@ -151,28 +189,10 @@ class Results(db.Model, SerializerMixin, SoftDeleteMixin):
         return {
             "id": self.id,
             "id_model": self.id_model,
-            "id_obat": self.id_obat,
             "rmse": self.rmse,
             "mape": self.mape,
             "testindex": self.testindex,
             "trainindex": self.trainindex,
             "y_true": self.y_true,
             "y_pred": self.y_pred,
-        }
-
-class Data(db.Model, SerializerMixin, SoftDeleteMixin):
-    __tablename__ = "data"
-    id = db.Column(db.Integer, primary_key=True)
-    id_result = db.Column(db.Integer, nullable=False)
-    id_nilai = db.Column(db.Integer, nullable=False)
-    row = db.Column(db.Text, nullable=True)
-    y = db.Column(db.Float, nullable=True)
-
-    def serialize(self):
-        return {
-            "id": self.id,
-            "id_result": self.id_result,
-            "id_obat": self.id_obat,
-            "row": self.row,
-            "y": self.y
         }

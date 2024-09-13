@@ -1,9 +1,25 @@
-{% extends "layout/dashboard.html" %}
-{% block inside %}
+{% extends "layout/dashboard.html" %} {% block inside %}
 <div class="page-wrapper">
-  <h1>Home</h1>
+  <br />
+  <div class="count-wrapper">
+    <div class="count-card">
+      <p class="count-total" id="count-siswa">0</p>
+      <p class="count-label">Jumlah Siswa</p>
+    </div>
+    <div class="count-card">
+      <p class="count-total" id="count-mapel">0</p>
+      <p class="count-label">Jumlah Mapel</p>
+    </div>
+    <div class="count-card">
+      <p class="count-total" id="count-nilai">0</p>
+      <p class="count-label">Jumlah Nilai</p>
+    </div>
+    <div class="count-card">
+      <p class="count-total" id="count-ujian">0</p>
+      <p class="count-label">Jumlah Nilai Ujian</p>
+    </div>
+  </div>
 </div>
-{% endblock %}
-{% block script %}
-{# <script src="{{ url_for('static', filename='js/pages/home.js')}}"></script> #}
+{% endblock %} {% block script %}
+<script src="{{ url_for('static', filename='js/pages/home.js')}}"></script>
 {% endblock %}
