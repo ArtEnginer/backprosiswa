@@ -166,13 +166,13 @@ def pelatihan():
                         y.append(u.nilai)
                 X.append(row)
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=pelatihan.testsize, shuffle=False)
-            backpropagation = MLPRegressor(random_state=1, max_iter=pelatihan.max_iter, learning_rate_init=pelatihan.learning_rate).fit(X_train, y_train)
+            backpropagation = MLPRegressor(hidden_layer_sizes=(4),random_state=1, max_iter=pelatihan.max_iter, learning_rate_init=pelatihan.learning_rate).fit(X_train, y_train)
             y_pred = backpropagation.predict(X_test)
-            loss = mean_squared_error(y_test, y_pred)
+            loss = mean_squared_error(y_test, y_pred, squared=False)
             if loss < best_loss:
                 best_loss = loss
             losses[m.kode] = backpropagation.loss_curve_
-            pickle.dump(backpropagation, open(f"train/{pelatihan.nama}-{m.kode}.pkl", 'wb')) 
+            pickle.dump(backpropagation, open(f"train/{pelatihan.nama}-{m                                                                                                                                                                                               .kode}.pkl", 'wb')) 
             # return {"toast": {
             #     "icon": "success",
             #     "title": "Data baru berhasil ditambahkan"
@@ -204,7 +204,9 @@ def pelatihanbyid(id):
         }, "data": data.serialize()}, 200
     if request.method == 'DELETE':
         # delete models file by name
-        os.remove(f"models/{data.nama}.pkl")
+        os.remove(f"train/{data.nama}-indo.pkl")
+        os.remove(f"train/{data.nama}-inggris.pkl")
+        os.remove(f"train/{data.nama}-mtk.pkl")
         db.session.query(Results).filter(Results.id_model == data.id).delete()
         db.session.delete(data)
         db.session.commit()
