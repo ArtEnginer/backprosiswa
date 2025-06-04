@@ -17,34 +17,16 @@ $("body").on("submit", "#form-prediksi", function (e) {
 });
 
 $(document).ready(function () {
-  cloud.add(origin + "/api/siswa", {
-    name: "siswa",
-  });
-  cloud.add(origin + "/api/jurusan", {
-    name: "jurusan",
-  });
-  cloud
-    .add(origin + "/api/mapel", {
-      name: "mapel",
-    })
-    .then((res) => {
-      res.data.forEach((key) => {
-        $("select[name=id_mapel]").append(`
-          <option value="${key.id}">${key.nama}</option>
-        `);
-      });
-    });
-  cloud.add(origin + "/api/nilai", {
-    name: "nilai",
-  });
-  cloud.add(origin + "/api/ujian", {
-    name: "ujian",
-  });
   cloud
     .add(origin + "/api/pelatihan", {
       name: "pelatihan",
     })
     .then((res) => {
+      if (res.data.length == 0) {
+        $("#blank-wrapper").removeClass("d-none");
+        return;
+      }
+      $("#prediksi-wrapper").removeClass("d-none");
       res.data.forEach((key) => {
         $("select[name=id_model]").append(`
           <option value="${key.id}">${key.nama}</option>

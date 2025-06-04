@@ -88,3 +88,11 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# Abaikan semua file di dalam folder model/
+model/*
+train/*
+
+# Tapi jangan abaikan index.html
+!model/index.html
+!train/index.html

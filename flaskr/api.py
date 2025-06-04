@@ -1,7 +1,7 @@
 import email
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
 from . import db
-from .models import Siswa, Mapel, Nilai, NilaiUjian,Jurusan, Models, Results, User
+from .models import Siswa, Mapel, Nilai, NilaiUjian, Jurusan, Models, Results, User
 import numpy as np
 from flask_login import login_user, logout_user, login_required, current_user
 import os
@@ -10,7 +10,7 @@ import json
 from sklearn.neural_network import MLPRegressor
 from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
+from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error, root_mean_squared_error
 
 api = Blueprint("api", __name__)
 
@@ -44,7 +44,8 @@ def login():
 @api.route("/siswa", methods=["GET", "POST"])
 def siswa():
     if request.method == 'POST':
-        data = Siswa(nama=request.form.get("nama"), kode=request.form.get("kode"))
+        data = Siswa(nama=request.form.get("nama"),
+                     kode=request.form.get("kode"))
         db.session.add(data)
         db.session.commit()
         return {"toast": {
@@ -55,10 +56,12 @@ def siswa():
     data = Siswa.query.all()
     return {"data": [k.serialize() for k in data]}, 200
 
+
 @api.route("/mapel", methods=["GET", "POST"])
 def mapel():
     if request.method == 'POST':
-        data = Mapel(nama=request.form.get("nama"), kode=request.form.get("kode"))
+        data = Mapel(nama=request.form.get("nama"),
+                     kode=request.form.get("kode"))
         db.session.add(data)
         db.session.commit()
         return {"toast": {
@@ -69,10 +72,12 @@ def mapel():
     data = Mapel.query.all()
     return {"data": [k.serialize() for k in data]}, 200
 
+
 @api.route("/nilai", methods=["GET", "POST"])
 def nilai():
     if request.method == 'POST':
-        data = Nilai(siswa_id=request.form.get("id_siswa"), mapel_id=request.form.get("id_mapel"), kkm=request.form.get("semester"), nilai=request.form.get("nilai"))
+        data = Nilai(siswa_id=request.form.get("id_siswa"), mapel_id=request.form.get(
+            "id_mapel"), kkm=request.form.get("semester"), nilai=request.form.get("nilai"))
         db.session.add(data)
         db.session.commit()
         return {"toast": {
@@ -83,10 +88,12 @@ def nilai():
     data = Nilai.query.all()
     return {"data": [k.serialize() for k in data]}, 200
 
+
 @api.route("/ujian", methods=["GET", "POST"])
 def ujian():
     if request.method == 'POST':
-        data = NilaiUjian(id_siswa=request.form.get("id_siswa"), id_mapel=request.form.get("id_mapel"), nilai=request.form.get("nilai"))
+        data = NilaiUjian(id_siswa=request.form.get("id_siswa"), id_mapel=request.form.get(
+            "id_mapel"), nilai=request.form.get("nilai"))
         db.session.add(data)
         db.session.commit()
         return {"toast": {
@@ -97,10 +104,12 @@ def ujian():
     data = NilaiUjian.query.all()
     return {"data": [k.serialize() for k in data]}, 200
 
+
 @api.route("/jurusan", methods=["GET", "POST"])
 def jurusan():
     if request.method == 'POST':
-        data = Jurusan(nama=request.form.get("nama"), kode=request.form.get("kode"))
+        data = Jurusan(nama=request.form.get("nama"),
+                       kode=request.form.get("kode"))
         db.session.add(data)
         db.session.commit()
         return {"toast": {
@@ -141,7 +150,8 @@ def siswabyid(id):
 @api.route("/pelatihan", methods=["GET", "POST"])
 def pelatihan():
     if request.method == 'POST':
-        pelatihan = Models(nama=request.form.get("nama"), testsize=float(request.form.get("testsize")), max_iter=int(request.form.get("max_iter")), learning_rate=float(request.form.get("learning_rate")))
+        pelatihan = Models(nama=request.form.get("nama"), testsize=float(request.form.get("testsize")), max_iter=int(
+            request.form.get("max_iter")), learning_rate=float(request.form.get("learning_rate")))
         db.session.add(pelatihan)
         db.session.flush()
         db.session.refresh(pelatihan)
@@ -165,14 +175,17 @@ def pelatihan():
                     if u.id_siswa == s.id and u.id_mapel == m.id:
                         y.append(u.nilai)
                 X.append(row)
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=pelatihan.testsize, shuffle=False)
-            backpropagation = MLPRegressor(hidden_layer_sizes=(4),random_state=1, max_iter=pelatihan.max_iter, learning_rate_init=pelatihan.learning_rate).fit(X_train, y_train)
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, test_size=pelatihan.testsize, shuffle=False)
+            backpropagation = MLPRegressor(hidden_layer_sizes=(
+                4), random_state=1, max_iter=pelatihan.max_iter, learning_rate_init=pelatihan.learning_rate).fit(X_train, y_train)
             y_pred = backpropagation.predict(X_test)
-            loss = mean_squared_error(y_test, y_pred, squared=False)
+            loss = root_mean_squared_error(y_test, y_pred)
             if loss < best_loss:
                 best_loss = loss
             losses[m.kode] = backpropagation.loss_curve_
-            pickle.dump(backpropagation, open(f"train/{pelatihan.nama}-{m                                                                                                                                                                                               .kode}.pkl", 'wb')) 
+            pickle.dump(backpropagation, open(
+                f"train/{pelatihan.nama}-{m.kode}.pkl", 'wb'))
             # return {"toast": {
             #     "icon": "success",
             #     "title": "Data baru berhasil ditambahkan"
