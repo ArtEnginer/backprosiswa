@@ -5,12 +5,14 @@ from .models import Siswa, Mapel, Nilai, NilaiUjian, Jurusan, Models, Results, U
 import numpy as np
 from flask_login import login_user, logout_user, login_required, current_user
 import os
+import shutil
 import pickle
 import json
 from sklearn.neural_network import MLPRegressor
 from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error, root_mean_squared_error
+import pandas as pd
 
 api = Blueprint("api", __name__)
 
@@ -162,6 +164,14 @@ def pelatihan():
         ujian = NilaiUjian.query.all()
         best_loss = 99999
         losses = {}
+
+        d = os.getcwd()
+        path_folder = os.path.join(d, "model", pelatihan.nama)
+
+        if os.path.exists(path_folder):
+            return False
+        os.makedirs(path_folder)
+
         for m in mapel:
             X = []
             y = []
@@ -185,7 +195,7 @@ def pelatihan():
                 best_loss = loss
             losses[m.kode] = backpropagation.loss_curve_
             pickle.dump(backpropagation, open(
-                f"train/{pelatihan.nama}-{m.kode}.pkl", 'wb'))
+                f"model/{pelatihan.nama}/{m.kode}.pkl", 'wb'))
             # return {"toast": {
             #     "icon": "success",
             #     "title": "Data baru berhasil ditambahkan"
@@ -217,9 +227,7 @@ def pelatihanbyid(id):
         }, "data": data.serialize()}, 200
     if request.method == 'DELETE':
         # delete models file by name
-        os.remove(f"train/{data.nama}-indo.pkl")
-        os.remove(f"train/{data.nama}-inggris.pkl")
-        os.remove(f"train/{data.nama}-mtk.pkl")
+        shutil.rmtree(f"model/{data.nama}")
         db.session.query(Results).filter(Results.id_model == data.id).delete()
         db.session.delete(data)
         db.session.commit()
@@ -288,20 +296,37 @@ def userbyid(id):
 
 @api.route("/prediksi", methods=["POST"])
 def prediksi():
-    data = Models.query.get(request.form.get("id_model"))
-    mapel = Mapel.query.get(request.form.get("id_mapel"))
-    if data == None:
+    file = request.files['file']
+    name = request.form.get("model")
+
+    if not os.path.exists(f'model/{name}'):
         return {"toast": {
             "icon": "error",
-            "title": "Data tidak ditemukan"
+            "title": "Model tidak ditemukan"
         }}, 404
-    smt1 = float(request.form.get("nilai1"))
-    smt2 = float(request.form.get("nilai2"))
-    smt3 = float(request.form.get("nilai3"))
-    smt4 = float(request.form.get("nilai4"))
-    model = pickle.load(open(f"train/{data.nama}-{mapel.kode}.pkl", 'rb'))
-    data.status = model.predict([[smt1, smt2, smt3, smt4]])[0]
+
+    model = {}
+    kode = ["indo", "mtk", "inggris"]
+    for m in kode:
+        model[m] = pickle.load(open(f"model/{name}/{m}.pkl", 'rb'))
+
+    df = pd.read_excel(file)
+
+    df[["jurusan", "nisn", "nama"]] = df[[
+        "jurusan", "nisn", "nama"]].fillna("-")
+    for m in ["indo", "mtk", "inggris"]:
+        for i in range(1, 5):
+            df[f"{m}{i}"] = df[f"{m}{i}"].fillna(0)
+
+    for m in kode:
+        fitur = df[[f"{m}1", f"{m}2", f"{m}3", f"{m}4"]]
+        df[m] = model[m].predict(fitur)
+    
+    df.to_excel("flaskr/static/xlsx/prediksi.xlsx", index=False)
+    
+    data = df.to_dict(orient="records")
+    
     return {"toast": {
         "icon": "success",
         "title": "Data berhasil diprediksi"
-    }, "data": data.serialize(), "prediksi": data.status}, 200
+    }, "data": data}, 200

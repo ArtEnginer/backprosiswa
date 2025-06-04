@@ -1,3 +1,2 @@
--> buat format untuk upload data
 -> inisiasi tabel prediksi
 -> jalankan logic prediksi
