@@ -24,6 +24,9 @@ class InitSeeder(Seeder):
         data = pd.read_excel("dataset/all.xlsx")
         self.db.session.add(Jurusan(nama="Teknik Komputer Jaringan", kode="TKJ"))
         self.db.session.add(Jurusan(nama="Bisnis Daring Pemasaran", kode="BDP"))
+        self.db.session.add(Jurusan(nama="Akuntansi", kode="AK"))
+        self.db.session.add(Jurusan(nama="Tata Busana", kode="TB"))
+        self.db.session.add(Jurusan(nama="Farmasi", kode="FR"))
 
         self.db.session.add(Mapel(nama="Bahasa Indonesia", kode="indo"))
         self.db.session.add(Mapel(nama="Matematika", kode="mtk"))
