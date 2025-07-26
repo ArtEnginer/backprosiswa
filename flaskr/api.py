@@ -46,14 +46,47 @@ def login():
 @api.route("/siswa", methods=["GET", "POST"])
 def siswa():
     if request.method == 'POST':
-        data = Siswa(nama=request.form.get("nama"),
-                     kode=request.form.get("kode"))
+        body = request.get_json()
+
+        # Ambil data utama siswa
+        data = Siswa(
+            nama=body.get("nama"),
+            nisn=body.get("nisn"),
+            id_jurusan=body.get("id_jurusan")
+        )
         db.session.add(data)
         db.session.commit()
-        return {"toast": {
-            "icon": "success",
-            "title": "Data baru berhasil ditambahkan"
-        }, "data": data.serialize()}, 200
+
+        siswa_id = data.id
+
+        # Simpan nilai
+        for item in body.get("nilai", []):
+            nilai = Nilai(
+                id_siswa=siswa_id,
+                id_mapel=item["id_mapel"],
+                semester=item["semester"],
+                nilai=item["nilai"]
+            )
+            db.session.add(nilai)
+
+        # Simpan ujian
+        for item in body.get("ujian", []):
+            ujian = NilaiUjian(
+                id_siswa=siswa_id,
+                id_mapel=item["id_mapel"],
+                nilai=item["nilai"]
+            )
+            db.session.add(ujian)
+
+        db.session.commit()
+
+        return jsonify({
+            "toast": {
+                "icon": "success",
+                "title": "Data siswa dan nilai berhasil ditambahkan"
+            },
+            "data": data.serialize()
+        }), 200
 
     data = Siswa.query.all()
     return {"data": [k.serialize() for k in data]}, 200
@@ -78,15 +111,63 @@ def mapel():
 @api.route("/nilai", methods=["GET", "POST"])
 def nilai():
     if request.method == 'POST':
-        data = Nilai(siswa_id=request.form.get("id_siswa"), mapel_id=request.form.get(
-            "id_mapel"), kkm=request.form.get("semester"), nilai=request.form.get("nilai"))
-        db.session.add(data)
-        db.session.commit()
-        return {"toast": {
-            "icon": "success",
-            "title": "Data baru berhasil ditambahkan"
-        }, "data": data.serialize()}, 200
+        body = request.get_json()
+        id_siswa = body.get("id_siswa")
 
+        # Update data nilai
+        for item in body.get("nilai", []):
+            id_mapel = item.get("id_mapel")
+            semester = item.get("semester")
+            nilai_baru = item.get("nilai")
+
+            # Cari nilai yang sudah ada
+            data_nilai = Nilai.query.filter_by(
+                id_siswa=id_siswa,
+                id_mapel=id_mapel,
+                semester=semester
+            ).first()
+
+            if data_nilai:
+                data_nilai.nilai = nilai_baru
+            else:
+                # Jika tidak ditemukan, bisa juga dibuat baru jika kamu mau
+                data_nilai = Nilai(
+                    id_siswa=id_siswa,
+                    id_mapel=id_mapel,
+                    semester=semester,
+                    nilai=nilai_baru
+                )
+                db.session.add(data_nilai)
+
+        # Update data ujian
+        for item in body.get("ujian", []):
+            id_mapel = item.get("id_mapel")
+            nilai_baru = item.get("nilai")
+
+            data_ujian = NilaiUjian.query.filter_by(
+                id_siswa=id_siswa,
+                id_mapel=id_mapel
+            ).first()
+
+            if data_ujian:
+                data_ujian.nilai = nilai_baru
+            else:
+                # Jika tidak ditemukan, bisa juga dibuat baru
+                data_ujian = NilaiUjian(
+                    id_siswa=id_siswa,
+                    id_mapel=id_mapel,
+                    nilai=nilai_baru
+                )
+                db.session.add(data_ujian)
+
+        db.session.commit()
+
+        return {
+            "toast": {
+                "icon": "success",
+                "title": "Nilai dan ujian berhasil diperbarui"
+            }
+        }, 200
     data = Nilai.query.all()
     return {"data": [k.serialize() for k in data]}, 200
 
@@ -321,11 +402,11 @@ def prediksi():
     for m in kode:
         fitur = df[[f"{m}1", f"{m}2", f"{m}3", f"{m}4"]]
         df[m] = model[m].predict(fitur)
-    
+
     df.to_excel("flaskr/static/xlsx/prediksi.xlsx", index=False)
-    
+
     data = df.to_dict(orient="records")
-    
+
     return {"toast": {
         "icon": "success",
         "title": "Data berhasil diprediksi"

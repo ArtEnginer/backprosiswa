@@ -46,3 +46,51 @@ $(document).ready(function () {
     name: "ujian",
   });
 });
+
+$("body").on("submit", "#form-data", function (e) {
+  e.preventDefault();
+  const form = $("#form-data");
+  const data = {
+    nilai: [],
+    ujian: [],
+  };
+  form.serializeArray().forEach((input) => {
+    if (input.name.includes("nilai")) {
+      const [key, id_mapel, semester] = input.name.split("-");
+      data.nilai.push({
+        id_mapel: parseInt(id_mapel),
+        semester: parseInt(semester),
+        nilai: parseInt(input.value),
+      });
+    } else if (input.name.includes("ujian")) {
+      const [key, id_mapel] = input.name.split("-");
+      data.ujian.push({
+        id_mapel: parseInt(id_mapel),
+        nilai: parseInt(input.value),
+      });
+    } else {
+      console.log(data);
+
+      data[input.name] = input.value;
+    }
+  });
+  console.log(data);
+
+  fetch("/api/siswa", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      table.data.ajax.reload();
+      Toast.fire({
+        icon: "success",
+        title: "Data berhasil disimpan",
+      });
+      $("#form-data").trigger("reset");
+      $("#btn-add").closest(".modal").modal("hide");
+    });
+});
