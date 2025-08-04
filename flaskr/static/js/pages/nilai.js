@@ -2,6 +2,11 @@ const table = {
   data: null,
 };
 
+const dataSend = {
+  nilai: [],
+  ujian: [],
+};
+
 $(document).ready(function () {
   cloud.add(origin + "/api/siswa", {
     name: "siswa",
@@ -34,7 +39,33 @@ $(document).ready(function () {
                         data: "id",
                         title: `${mpl.kode} ${idx}`,
                         render: function (data) {
-                          return nilai.data.find((k) => k.id_siswa == data && k.id_mapel == mpl.id && k.semester == idx).nilai;
+                          const n = Number(nilai.data.find((k) => k.id_siswa == data && k.id_mapel == mpl.id && k.semester == idx).nilai);
+                          const inputElement = document.createElement("input");
+                          inputElement.type = "number";
+                          inputElement.className = "form-control";
+                          inputElement.name = `nilai-${mpl.id}-${idx}`;
+                          inputElement.value = n || 0;
+                          inputElement.style.width = "70px";
+                          inputElement.min = 0;
+                          inputElement.max = 100;
+                          inputElement.addEventListener("keyup", function () {
+                            const value = this.value;
+                            if (value < 0 || value > 100) {
+                              this.value = "";
+                            }
+                            if ((ds = dataSend.nilai.find((d) => d.id_siswa == data && d.id_mapel == mpl.id && d.semester == idx))) {
+                              ds.nilai = Number(value);
+                            } else {
+                              dataSend.nilai.push({
+                                id_siswa: data,
+                                id_mapel: mpl.id,
+                                semester: idx,
+                                nilai: Number(value),
+                              });
+                            }
+                            console.log(dataSend);
+                          });
+                          return inputElement;
                         },
                       });
                     }
@@ -42,26 +73,46 @@ $(document).ready(function () {
                       data: "id",
                       title: mpl.nama,
                       render: function (data) {
-                        return ujian.data.find((k) => k.id_siswa == data && k.id_mapel == mpl.id).nilai;
+                        const n = ujian.data.find((k) => k.id_siswa == data && k.id_mapel == mpl.id).nilai;
+                        const inputElement = document.createElement("input");
+                        inputElement.type = "number";
+                        inputElement.className = "form-control";
+                        inputElement.name = `ujian-${mpl.id}`;
+                        inputElement.value = n || 0;
+                        inputElement.style.width = "70px";
+                        inputElement.min = 0;
+                        inputElement.max = 100;
+                        inputElement.addEventListener("keyup", function () {
+                          const value = this.value;
+                          if (value < 0 || value > 100) {
+                            this.value = "";
+                          }
+                          if ((ds = dataSend.ujian.find((d) => d.id_siswa == data && d.id_mapel == mpl.id))) {
+                            ds.nilai = Number(value);
+                          } else {
+                            dataSend.ujian.push({
+                              id_siswa: data,
+                              id_mapel: mpl.id,
+                              nilai: Number(value),
+                            });
+                          }
+                          console.log(dataSend);
+                        });
+                        return inputElement;
                       },
                     });
                   });
                   table.data = $("#table-data").DataTable({
-                    processing: true,
+                    fixedColumns: {
+                      start: 3,
+                    },
+                    fixedHeader: true,
+                    scrollX: true,
                     ajax: {
                       url: origin + "/api/siswa",
                       type: "GET",
                     },
                     columns: [
-                      {
-                        data: "id",
-                        title: "Aksi",
-                        render: (data) => {
-                          return `
-                  <button class="btn btn-sm btn-success btn-edit" data-id="${data}"><i class="fas fa-edit"></i></button>
-                `;
-                        },
-                      },
                       {
                         data: "id_jurusan",
                         title: "Jurusan",
@@ -80,6 +131,12 @@ $(document).ready(function () {
                       ...nilaiMapel,
                       ...nilaiUjian,
                     ],
+                    columnDefs: [
+                      {
+                        targets: 2,
+                        width: "200px",
+                      },
+                    ],
                   });
                 });
             });
@@ -87,67 +144,17 @@ $(document).ready(function () {
     });
 });
 
-$("body").on("click", ".btn-edit", function (e) {
+$("body").on("click", "#btn-save", function (e) {
   e.preventDefault();
-  const id = $(e.currentTarget).data("id");
-  const nilai = cloud.get("nilai").data.filter((k) => k.id_siswa == id);
-  const ujian = cloud.get("ujian").data.filter((k) => k.id_siswa == id);
-
-  nilai.forEach((k) => {
-    $(`#form-data [name="nilai-${k.id_mapel}-${k.semester}"]`).val(k.nilai);
-  });
-
-  ujian.forEach((k) => {
-    $(`#form-data [name="ujian-${k.id_mapel}"]`).val(k.nilai);
-  });
-
-  $("#form-data [name='id_siswa']").val(id);
-
-  $("#exampleModal").modal("show");
-  console.log(nilai, ujian);
-});
-
-$("body").on("submit", "#form-data", function (e) {
-  e.preventDefault();
-  const form = $("#form-data");
-  const data = {
-    nilai: [],
-    ujian: [],
-  };
-  form.serializeArray().forEach((input) => {
-    if (input.name.includes("nilai")) {
-      const [key, id_mapel, semester] = input.name.split("-");
-      data[key].push({
-        id_mapel: parseInt(id_mapel),
-        semester: parseInt(semester),
-        nilai: parseInt(input.value),
-      });
-    } else if (input.name.includes("ujian")) {
-      const [key, id_mapel] = input.name.split("-");
-      data[key].push({
-        id_mapel: parseInt(id_mapel),
-        nilai: parseInt(input.value),
-      });
-    }
-  });
-  data.id_siswa = form.find('[name="id_siswa"]').val();
-  console.log(data);
   fetch("/api/nilai", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(data),
+    body: JSON.stringify(dataSend),
   })
     .then((res) => res.json())
     .then((res) => {
-      console.log(res);
-      table.data.ajax.reload();
-      form.trigger("reset");
-      $("#exampleModal").modal("hide");
-      Toast.fire({
-        icon: "success",
-        title: "Data berhasil disimpan",
-      });
+      window.location.reload();
     });
 });

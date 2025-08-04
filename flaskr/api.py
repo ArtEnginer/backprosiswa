@@ -14,6 +14,12 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error, root_mean_squared_error
 import pandas as pd
 
+def safe_load(path):
+    if os.path.exists(path):
+        data = pickle.load(open(path, 'rb'))
+        return data.tolist() if isinstance(data, np.ndarray) else data
+    return []
+
 api = Blueprint("api", __name__)
 
 
@@ -112,17 +118,18 @@ def mapel():
 def nilai():
     if request.method == 'POST':
         body = request.get_json()
-        id_siswa = body.get("id_siswa")
+        nilai = body.get("nilai", [])
+        ujian = body.get("ujian", [])
 
         # Update data nilai
-        for item in body.get("nilai", []):
+        for item in nilai:
             id_mapel = item.get("id_mapel")
             semester = item.get("semester")
             nilai_baru = item.get("nilai")
 
             # Cari nilai yang sudah ada
             data_nilai = Nilai.query.filter_by(
-                id_siswa=id_siswa,
+                id_siswa=item.get("id_siswa"),
                 id_mapel=id_mapel,
                 semester=semester
             ).first()
@@ -132,7 +139,7 @@ def nilai():
             else:
                 # Jika tidak ditemukan, bisa juga dibuat baru jika kamu mau
                 data_nilai = Nilai(
-                    id_siswa=id_siswa,
+                    id_siswa=item.get("id_siswa"),
                     id_mapel=id_mapel,
                     semester=semester,
                     nilai=nilai_baru
@@ -140,12 +147,12 @@ def nilai():
                 db.session.add(data_nilai)
 
         # Update data ujian
-        for item in body.get("ujian", []):
+        for item in ujian:
             id_mapel = item.get("id_mapel")
             nilai_baru = item.get("nilai")
 
             data_ujian = NilaiUjian.query.filter_by(
-                id_siswa=id_siswa,
+                id_siswa=item.get("id_siswa"),
                 id_mapel=id_mapel
             ).first()
 
@@ -154,7 +161,7 @@ def nilai():
             else:
                 # Jika tidak ditemukan, bisa juga dibuat baru
                 data_ujian = NilaiUjian(
-                    id_siswa=id_siswa,
+                    id_siswa=item.get("id_siswa"),
                     id_mapel=id_mapel,
                     nilai=nilai_baru
                 )
@@ -268,9 +275,19 @@ def pelatihan():
                 X.append(row)
             X_train, X_test, y_train, y_test = train_test_split(
                 X, y, test_size=pelatihan.testsize, shuffle=False)
+            pickle.dump(X_train, open(
+                f"model/{pelatihan.nama}/{m.kode}_X_train.pkl", 'wb'))
+            pickle.dump(X_test, open(
+                f"model/{pelatihan.nama}/{m.kode}_X_test.pkl", 'wb'))
+            pickle.dump(y_train, open(
+                f"model/{pelatihan.nama}/{m.kode}_y_train.pkl", 'wb'))
+            pickle.dump(y_test, open(
+                f"model/{pelatihan.nama}/{m.kode}_y_test.pkl", 'wb'))
             backpropagation = MLPRegressor(hidden_layer_sizes=(
                 4), random_state=1, max_iter=pelatihan.max_iter, learning_rate_init=pelatihan.learning_rate).fit(X_train, y_train)
             y_pred = backpropagation.predict(X_test)
+            pickle.dump(y_pred, open(
+                f"model/{pelatihan.nama}/{m.kode}_y_pred.pkl", 'wb'))
             loss = root_mean_squared_error(y_test, y_pred)
             if loss < best_loss:
                 best_loss = loss
@@ -290,8 +307,24 @@ def pelatihan():
             "title": "Data baru berhasil ditambahkan"
         }, "data": pelatihan.serialize()}, 200
 
-    data = Models.query.all()
-    return {"data": [k.serialize() for k in data]}, 200
+    allModels = Models.query.all()
+    # include X_train, X_test, y_train, y_test, losses
+    data = []
+    for model in allModels:
+        model_data = model.serialize()
+        model_data['losses'] = json.loads(model.losses) if model.losses else {}
+        mapel = Mapel.query.all()
+        for m in mapel:
+            model_data[m.kode] = {}
+            model_data[m.kode]['X_train'] = safe_load(f"model/{model.nama}/{m.kode}_X_train.pkl")
+            model_data[m.kode]['X_test'] = safe_load(f"model/{model.nama}/{m.kode}_X_test.pkl")
+            model_data[m.kode]['y_train'] = safe_load(f"model/{model.nama}/{m.kode}_y_train.pkl")
+            model_data[m.kode]['y_test'] = safe_load(f"model/{model.nama}/{m.kode}_y_test.pkl")
+            model_data[m.kode]['y_pred'] = safe_load(f"model/{model.nama}/{m.kode}_y_pred.pkl")
+        data.append(model_data)
+
+    return {"data": data}, 200
+
 
 
 @api.route("/pelatihan/<id>", methods=["GET", "POST", "DELETE"])

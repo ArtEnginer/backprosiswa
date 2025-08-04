@@ -1,0 +1,7 @@
+.table-data {
+  width: 100%;
+  table-layout: fixed;
+}
+.dataTables_wrapper {
+  overflow: auto;
+}

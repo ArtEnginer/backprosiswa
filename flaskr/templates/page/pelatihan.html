@@ -5,43 +5,33 @@
       <div class="col-12">
         <div class="d-flex justify-content-between align-items-center">
           <h4>Pelatihan</h4>
-          <button
-            type="button"
-            class="btn btn-success"
-            data-toggle="modal"
-            data-target="#exampleModal"
-          >
-            Tambah Pelatihan Baru
-          </button>
+          <button type="button" class="btn btn-success" data-toggle="modal" data-target="#exampleModal">Tambah Pelatihan Baru</button>
         </div>
         <br />
         <div class="table-responsive">
-          <table id="table-data"></table>
+          <table class="table-data" id="table-data"></table>
         </div>
+      </div>
+    </div>
+    <br><br>
+    <div class="row">
+      <div class="col-12" style="overflow: hidden; width: 100%; position: relative">
+        <div class="d-flex justify-content-center align-items-center">
+          <h4>Hasil Prediksi : -</h4>
+        </div>
+        <br />
+        <table class="table-data" id="table-result" style="width: 100%"></table>
       </div>
     </div>
   </div>
 </div>
 {% endblock %} {% block modal %}
-<div
-  class="modal fade"
-  id="exampleModal"
-  tabindex="-1"
-  aria-labelledby="exampleModalLabel"
-  aria-hidden="true"
->
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">
-          Tambah Pelatihan baru
-        </h5>
-        <button
-          type="button"
-          class="close"
-          data-dismiss="modal"
-          aria-label="Close"
-        >
+        <h5 class="modal-title" id="exampleModalLabel">Tambah Pelatihan baru</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -49,53 +39,24 @@
         <form id="form-pelatihan" method="POST">
           <div class="form-group">
             <label for="nama">Nama Model</label>
-            <input
-              type="text"
-              class="form-control"
-              id="nama"
-              name="nama"
-              required
-            />
+            <input type="text" class="form-control" id="nama" name="nama" required />
           </div>
           <div class="form-group">
             <label for="testsize">Ukuran Data Testing</label>
-            <input
-              type="number"
-              min="0.1"
-              class="form-control"
-              id="testsize"
-              name="testsize"
-              required
-            />
+            <input type="number" min="0.1" class="form-control" id="testsize" name="testsize" required />
           </div>
           <div class="form-group">
             <label for="learning_rate">Learning Rate</label>
-            <input
-              type="number"
-              min="0.001"
-              class="form-control"
-              id="learning_rate"
-              name="learning_rate"
-              required
-            />
+            <input type="number" min="0.001" class="form-control" id="learning_rate" name="learning_rate" required />
           </div>
           <div class="form-group">
             <label for="max_iter">Max Iterasi</label>
-            <input
-              type="number"
-              min="1"
-              class="form-control"
-              id="max_iter"
-              name="max_iter"
-              required
-            />
+            <input type="number" min="1" class="form-control" id="max_iter" name="max_iter" required />
           </div>
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">
-          Close
-        </button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
         <button type="button" class="btn btn-primary" id="btn-add">Mulai</button>
       </div>
     </div>
