@@ -59,6 +59,7 @@ $(document).ready(function () {
 
               viewElement.addEventListener("click", (e) => {
                 console.log(row);
+                $("#result-title").text("Hasil Prediksi: " + row.nama);
                 const dataResult = [];
                 const dataLength = row.indo.X_test.length;
                 for (let i = 0; i < dataLength; i++) {
