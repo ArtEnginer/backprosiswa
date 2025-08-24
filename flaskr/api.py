@@ -225,6 +225,11 @@ def siswabyid(id):
     if request.method == 'DELETE':
         db.session.delete(data)
         db.session.commit()
+        
+        Nilai.query.filter_by(id_siswa=id).delete()
+        NilaiUjian.query.filter_by(id_siswa=id).delete()
+        db.session.commit()
+
         return {"toast": {
             "icon": "success",
             "title": "Data berhasil dihapus"

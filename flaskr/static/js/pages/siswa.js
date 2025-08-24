@@ -19,6 +19,23 @@ $(document).ready(function () {
         },
         columns: [
           {
+            data: "id",
+            title: "Aksi",
+            render: (data, type, row) => {
+              const deleteElement = document.createElement("button");
+              deleteElement.className = "btn btn-sm btn-danger btn-delete";
+              deleteElement.innerHTML = '<i class="fas fa-trash"></i>';
+              deleteElement.setAttribute("data-id", data);
+              deleteElement.onclick = () => deleteData(data);
+
+              const buttons = document.createElement("div");
+              buttons.className =
+                "d-flex justify-content-center align-items-center";
+              buttons.appendChild(deleteElement);
+              return buttons;
+            },
+          },
+          {
             data: "id_jurusan",
             title: "Jurusan",
             render: function (data) {
@@ -94,3 +111,28 @@ $("body").on("submit", "#form-data", function (e) {
       $("#btn-add").closest(".modal").modal("hide");
     });
 });
+
+function deleteData(id) {
+  Swal.fire({
+    title: "Hapus data siswa?",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#3085d6",
+    cancelButtonColor: "#d33",
+    confirmButtonText: "Hapus",
+  }).then((result) => {
+    if (result.isConfirmed) {
+      $.ajax({
+        type: "DELETE",
+        url: origin + "/api/siswa/" + id,
+        success: (res) => {
+          table.data.ajax.reload();
+          Toast.fire({
+            icon: "success",
+            title: "Data berhasil dihapus",
+          });
+        },
+      });
+    }
+  });
+}
