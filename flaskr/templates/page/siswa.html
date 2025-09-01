@@ -5,9 +5,17 @@
       <div class="col-12">
         <div class="d-flex justify-content-between align-items-center">
           <h4>Data Siswa</h4>
-          <button type="button" class="btn btn-success" data-toggle="modal" data-target="#exampleModal">
-            Tambah Siswa Baru
-          </button>
+          <div>
+            <button type="button" class="btn btn-info mr-2" onclick="downloadTemplate()">
+              Download Template
+            </button>
+            <button type="button" class="btn btn-warning mr-2" data-toggle="modal" data-target="#importModal">
+              Import Excel
+            </button>
+            <button type="button" class="btn btn-success" data-toggle="modal" data-target="#exampleModal">
+              Tambah Siswa Baru
+            </button>
+          </div>
         </div>
         <br>
         <div class="table-responsive">
@@ -18,6 +26,54 @@
   </div>
 </div>
 {% endblock %} {% block modal %}
+<!-- Modal Import -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="import-form" method="POST" enctype="multipart/form-data">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="importModalLabel">
+            Import Data Siswa dari Excel
+          </h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-info">
+            <strong>Format File Excel:</strong>
+            <ul class="mb-0">
+              <li>Kolom wajib: nama, nisn, id_jurusan</li>
+              <li>Kolom nilai opsional: indo1-indo4, mtk1-mtk4, inggris1-inggris4</li>
+              <li>Kolom ujian opsional: ujian_indo, ujian_mtk, ujian_inggris</li>
+              <li>id_jurusan: 1=TKJ, 2=BDP, 3=Akuntansi, 4=Tata Busana, 5=Farmasi</li>
+            </ul>
+          </div>
+          <div class="form-group">
+            <label for="import_file">Pilih File Excel</label>
+            <input type="file" class="form-control-file" id="import_file" name="file" accept=".xlsx,.xls" required />
+          </div>
+          <div id="import-progress" class="d-none">
+            <div class="progress">
+              <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+                style="width: 100%">
+                Memproses...
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">
+            Batal
+          </button>
+          <button class="btn btn-primary" id="btn-import" type="submit">Import</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Tambah Siswa -->
 <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <form id="form-data" method="POST">

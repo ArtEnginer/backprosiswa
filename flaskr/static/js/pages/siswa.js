@@ -112,6 +112,103 @@ $("body").on("submit", "#form-data", function (e) {
     });
 });
 
+// Handle import form submission
+$("body").on("submit", "#import-form", function (e) {
+  e.preventDefault();
+
+  const formData = new FormData();
+  const fileInput = document.getElementById("import_file");
+
+  if (!fileInput.files[0]) {
+    Toast.fire({
+      icon: "error",
+      title: "Pilih file terlebih dahulu",
+    });
+    return;
+  }
+
+  formData.append("file", fileInput.files[0]);
+
+  // Show progress
+  $("#import-progress").removeClass("d-none");
+  $("#btn-import").prop("disabled", true);
+
+  fetch("/api/import-siswa", {
+    method: "POST",
+    body: formData,
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      $("#import-progress").addClass("d-none");
+      $("#btn-import").prop("disabled", false);
+
+      if (data.toast) {
+        Toast.fire({
+          icon: data.toast.icon,
+          title: data.toast.title,
+        });
+      }
+
+      if (data.errors && data.errors.length > 0) {
+        let errorMessage =
+          "Beberapa data gagal diimport:\n" + data.errors.join("\n");
+        Swal.fire({
+          title: "Peringatan",
+          text: errorMessage,
+          icon: "warning",
+          confirmButtonText: "OK",
+        });
+      }
+
+      if (data.imported_count > 0) {
+        table.data.ajax.reload();
+        $("#import-form").trigger("reset");
+        $("#importModal").modal("hide");
+      }
+    })
+    .catch((error) => {
+      $("#import-progress").addClass("d-none");
+      $("#btn-import").prop("disabled", false);
+
+      Toast.fire({
+        icon: "error",
+        title: "Terjadi kesalahan saat import",
+      });
+      console.error("Error:", error);
+    });
+});
+
+// Function to download template
+function downloadTemplate() {
+  fetch("/api/template-import", {
+    method: "GET",
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.download_url) {
+        // Create download link
+        const link = document.createElement("a");
+        link.href = data.download_url;
+        link.download = "template_import_siswa.xlsx";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        Toast.fire({
+          icon: "success",
+          title: "Template berhasil didownload",
+        });
+      }
+    })
+    .catch((error) => {
+      Toast.fire({
+        icon: "error",
+        title: "Gagal mendownload template",
+      });
+      console.error("Error:", error);
+    });
+}
+
 function deleteData(id) {
   Swal.fire({
     title: "Hapus data siswa?",
