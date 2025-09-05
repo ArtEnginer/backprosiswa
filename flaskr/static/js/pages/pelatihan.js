@@ -43,6 +43,7 @@ $(document).ready(function () {
           url: origin + "/api/pelatihan",
           type: "GET",
         },
+
         columns: [
           {
             data: "id",
@@ -62,7 +63,27 @@ $(document).ready(function () {
                 $("#result-title").text("Hasil Prediksi: " + row.nama);
                 const dataResult = [];
                 const dataLength = row.indo.X_test.length;
+
+                // Calculate RMSE manually for each subject
+                let indoSquaredErrors = [];
+                let mtkSquaredErrors = [];
+                let inggrisSquaredErrors = [];
+
                 for (let i = 0; i < dataLength; i++) {
+                  // Calculate squared errors for each subject
+                  const indoError = row.indo.y_test[i] - row.indo.y_pred[i];
+                  const mtkError = row.mtk.y_test[i] - row.mtk.y_pred[i];
+                  const inggrisError =
+                    row.inggris.y_test[i] - row.inggris.y_pred[i];
+
+                  const indoSquaredError = Math.pow(indoError, 2);
+                  const mtkSquaredError = Math.pow(mtkError, 2);
+                  const inggrisSquaredError = Math.pow(inggrisError, 2);
+
+                  indoSquaredErrors.push(indoSquaredError);
+                  mtkSquaredErrors.push(mtkSquaredError);
+                  inggrisSquaredErrors.push(inggrisSquaredError);
+
                   dataResult.push({
                     indo1: row.indo.X_test[i][0],
                     indo2: row.indo.X_test[i][1],
@@ -70,25 +91,117 @@ $(document).ready(function () {
                     indo4: row.indo.X_test[i][3],
                     indo_y: row.indo.y_test[i],
                     indo_ypred: row.indo.y_pred[i].toFixed(4),
+                    indo_error: indoError.toFixed(4),
+                    indo_squared_error: indoSquaredError.toFixed(4),
                     mat1: row.mtk.X_test[i][0],
                     mat2: row.mtk.X_test[i][1],
                     mat3: row.mtk.X_test[i][2],
                     mat4: row.mtk.X_test[i][3],
                     mat_y: row.mtk.y_test[i],
                     mat_ypred: row.mtk.y_pred[i].toFixed(4),
+                    mat_error: mtkError.toFixed(4),
+                    mat_squared_error: mtkSquaredError.toFixed(4),
                     inggris1: row.inggris.X_test[i][0],
                     inggris2: row.inggris.X_test[i][1],
                     inggris3: row.inggris.X_test[i][2],
                     inggris4: row.inggris.X_test[i][3],
                     inggris_y: row.inggris.y_test[i],
                     inggris_ypred: row.inggris.y_pred[i].toFixed(4),
+                    inggris_error: inggrisError.toFixed(4),
+                    inggris_squared_error: inggrisSquaredError.toFixed(4),
                   });
                 }
+
+                // Calculate final RMSE values
+                const indoMSE =
+                  indoSquaredErrors.reduce((a, b) => a + b, 0) / dataLength;
+                const mtkMSE =
+                  mtkSquaredErrors.reduce((a, b) => a + b, 0) / dataLength;
+                const inggrisMSE =
+                  inggrisSquaredErrors.reduce((a, b) => a + b, 0) / dataLength;
+
+                const indoRMSE = Math.sqrt(indoMSE);
+                const mtkRMSE = Math.sqrt(mtkMSE);
+                const inggrisRMSE = Math.sqrt(inggrisMSE);
+
+                // Display RMSE calculation summary with comparison
+                const rmseCalculation = `
+                  <div class="card mt-3">
+                    <div class="card-header">
+                      <h5>Perhitungan RMSE Manual (Data Testing)</h5>
+                      <small class="text-muted">RMSE ini dihitung dari data testing yang digunakan saat pelatihan model</small>
+                    </div>
+                    <div class="card-body">
+                      <div class="row">
+                        <div class="col-md-4">
+                          <h6><strong>Bahasa Indonesia</strong></h6>
+                          <p>MSE = &Sigma;(Error&sup2;) / n = ${indoSquaredErrors
+                            .reduce((a, b) => a + b, 0)
+                            .toFixed(4)} / ${dataLength} = ${indoMSE.toFixed(
+                  4
+                )}</p>
+                          <p><strong>RMSE = &radic;MSE = &radic;${indoMSE.toFixed(
+                            4
+                          )} = ${indoRMSE.toFixed(4)}</strong></p>
+                        </div>
+                        <div class="col-md-4">
+                          <h6><strong>Matematika</strong></h6>
+                          <p>MSE = &Sigma;(Error&sup2;) / n = ${mtkSquaredErrors
+                            .reduce((a, b) => a + b, 0)
+                            .toFixed(4)} / ${dataLength} = ${mtkMSE.toFixed(
+                  4
+                )}</p>
+                          <p><strong>RMSE = &radic;MSE = &radic;${mtkMSE.toFixed(
+                            4
+                          )} = ${mtkRMSE.toFixed(4)}</strong></p>
+                        </div>
+                        <div class="col-md-4">
+                          <h6><strong>Bahasa Inggris</strong></h6>
+                          <p>MSE = &Sigma;(Error&sup2;) / n = ${inggrisSquaredErrors
+                            .reduce((a, b) => a + b, 0)
+                            .toFixed(4)} / ${dataLength} = ${inggrisMSE.toFixed(
+                  4
+                )}</p>
+                          <p><strong>RMSE = &radic;MSE = &radic;${inggrisMSE.toFixed(
+                            4
+                          )} = ${inggrisRMSE.toFixed(4)}</strong></p>
+                        </div>
+                      </div>
+                      <div class="row mt-3">
+                        <div class="col-12">
+                          <div class="alert alert-info">
+                            <h6><strong>Penjelasan RMSE:</strong></h6>
+                            <p><strong>RMSE Training</strong> = RMSE yang dihitung dari data testing saat pelatihan model (ditampilkan di tabel)</p>
+                            <p><strong>RMSE Manual</strong> = RMSE yang dihitung ulang secara manual dari data yang sama</p>
+                            <p><strong>Rumus:</strong> RMSE = &radic;(&Sigma;(Aktual - Prediksi)&sup2; / n)</p>
+                            <p>Dimana:</p>
+                            <ul>
+                              <li>Aktual = Nilai ujian sebenarnya</li>
+                              <li>Prediksi = Nilai hasil prediksi model</li>
+                              <li>n = Jumlah data test (${dataLength})</li>
+                            </ul>
+                            <p><small><em>Nilai RMSE Training dan Manual seharusnya sama karena menggunakan data yang sama.</em></small></p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                `;
+
+                // Add RMSE calculation to the modal
+                if (!$("#rmse-calculation").length) {
+                  $("#table-result_wrapper").after(
+                    '<div id="rmse-calculation"></div>'
+                  );
+                }
+                $("#rmse-calculation").html(rmseCalculation);
+
                 table.result.clear().rows.add(dataResult).draw();
               });
 
               const buttons = document.createElement("div");
-              buttons.className = "d-flex justify-content-center align-items-center";
+              buttons.className =
+                "d-flex justify-content-center align-items-center";
               buttons.appendChild(deleteElement);
               buttons.appendChild(viewElement);
               return buttons;
@@ -111,11 +224,17 @@ $(document).ready(function () {
             title: "Max Iterasi",
           },
           ...mapel.data.map((mp) => ({
-            data: "losses",
-            title: "RMSE " + mp.nama,
+            data: "rmse_scores",
+            title: "RMSE Training " + mp.nama,
             render: (data) => {
-              const minValue = Math.min(...data[mp.kode]);
-              return minValue.toFixed(4);
+              if (
+                data &&
+                data[mp.kode] !== null &&
+                data[mp.kode] !== undefined
+              ) {
+                return data[mp.kode].toFixed(4);
+              }
+              return "N/A";
             },
           })),
         ],
@@ -124,7 +243,7 @@ $(document).ready(function () {
         scrollX: true,
         layout: {
           topStart: {
-            buttons: ["copy", "csv", "excel",],
+            buttons: ["copy", "csv", "excel"],
           },
         },
         columns: [
@@ -160,6 +279,19 @@ $(document).ready(function () {
             title: "Indo Prediksi",
           },
           {
+            data: "indo_error",
+            title: "Indo Error",
+            render: (data) => {
+              return `<span class="${
+                parseFloat(data) < 0 ? "text-danger" : "text-success"
+              }">${data}</span>`;
+            },
+          },
+          {
+            data: "indo_squared_error",
+            title: "Indo Error²",
+          },
+          {
             data: "mat1",
             title: "Mat 1",
           },
@@ -184,6 +316,19 @@ $(document).ready(function () {
             title: "Mat Prediksi",
           },
           {
+            data: "mat_error",
+            title: "Mat Error",
+            render: (data) => {
+              return `<span class="${
+                parseFloat(data) < 0 ? "text-danger" : "text-success"
+              }">${data}</span>`;
+            },
+          },
+          {
+            data: "mat_squared_error",
+            title: "Mat Error²",
+          },
+          {
             data: "inggris1",
             title: "Inggris 1",
           },
@@ -206,6 +351,19 @@ $(document).ready(function () {
           {
             data: "inggris_ypred",
             title: "Inggris Prediksi",
+          },
+          {
+            data: "inggris_error",
+            title: "Inggris Error",
+            render: (data) => {
+              return `<span class="${
+                parseFloat(data) < 0 ? "text-danger" : "text-success"
+              }">${data}</span>`;
+            },
+          },
+          {
+            data: "inggris_squared_error",
+            title: "Inggris Error²",
           },
         ],
       });

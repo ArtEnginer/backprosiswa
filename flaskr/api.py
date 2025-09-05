@@ -17,6 +17,7 @@ from sklearn.metrics import (
     mean_squared_error,
     root_mean_squared_error,
 )
+from sklearn.metrics import mean_squared_error
 import pandas as pd
 
 
@@ -262,6 +263,7 @@ def pelatihan():
         ujian = NilaiUjian.query.all()
         best_loss = 99999
         losses = {}
+        rmse_scores = {}
 
         d = os.getcwd()
         path_folder = os.path.join(d, "model", pelatihan.nama)
@@ -280,7 +282,9 @@ def pelatihan():
             y = []
             for s in siswa:
                 row = []
+                # Collect semester grades in order
                 for smt in range(4):
+                    nilai_found = False
                     for n in nilai:
                         if (
                             n.id_siswa == s.id
@@ -288,13 +292,41 @@ def pelatihan():
                             and n.semester == (smt + 1)
                         ):
                             row.append(n.nilai)
+                            nilai_found = True
+                            break
+                    if not nilai_found:
+                        row.append(0)  # Handle missing semester grades consistently
+
+                # Only include students who have exam scores
+                ujian_found = False
                 for u in ujian:
                     if u.id_siswa == s.id and u.id_mapel == m.id:
                         y.append(u.nilai)
-                X.append(row)
+                        ujian_found = True
+                        break
+
+                if ujian_found:
+                    X.append(row)
+                else:
+                    # Remove the last added row if no exam score exists
+                    if len(X) == len(y):
+                        pass  # No row was added to X yet
+                    else:
+                        X.pop()  # Remove the row that was added without corresponding y
+
+            # Ensure X and y have the same length
+            min_len = min(len(X), len(y))
+            X = X[:min_len]
+            y = y[:min_len]
+
+            if len(X) == 0 or len(y) == 0:
+                continue  # Skip if no data available
+
             X_train, X_test, y_train, y_test = train_test_split(
                 X, y, test_size=pelatihan.testsize, shuffle=False
             )
+
+            # Save training data
             pickle.dump(
                 X_train, open(f"model/{pelatihan.nama}/{m.kode}_X_train.pkl", "wb")
             )
@@ -307,34 +339,45 @@ def pelatihan():
             pickle.dump(
                 y_test, open(f"model/{pelatihan.nama}/{m.kode}_y_test.pkl", "wb")
             )
+
+            # Train model
             backpropagation = MLPRegressor(
                 hidden_layer_sizes=(4),
                 random_state=1,
                 max_iter=pelatihan.max_iter,
                 learning_rate_init=pelatihan.learning_rate,
             ).fit(X_train, y_train)
+
+            # Make predictions and calculate RMSE
             y_pred = backpropagation.predict(X_test)
             pickle.dump(
                 y_pred, open(f"model/{pelatihan.nama}/{m.kode}_y_pred.pkl", "wb")
             )
-            loss = root_mean_squared_error(y_test, y_pred)
-            if loss < best_loss:
-                best_loss = loss
+
+            # Calculate and store RMSE for training evaluation
+            rmse_training = root_mean_squared_error(y_test, y_pred)
+            rmse_scores[m.kode] = rmse_training
+
+            if rmse_training < best_loss:
+                best_loss = rmse_training
             losses[m.kode] = backpropagation.loss_curve_
+
+            # Save model
             pickle.dump(
                 backpropagation, open(f"model/{pelatihan.nama}/{m.kode}.pkl", "wb")
             )
-            # return {"toast": {
-            #     "icon": "success",
-            #     "title": "Data baru berhasil ditambahkan"
-            # }, "data": [X_train, X_test, y_train, y_test]}, 200
-        # db.session.commit()
+
         pelatihan.best_loss = best_loss
         pelatihan.losses = json.dumps(losses)
+
+        # Store RMSE scores for training data with clear labeling
+        pelatihan.rmse_scores = json.dumps(rmse_scores)
+
         db.session.commit()
         return {
             "toast": {"icon": "success", "title": "Data baru berhasil ditambahkan"},
             "data": pelatihan.serialize(),
+            "rmse_training": rmse_scores,  # Renamed for clarity
         }, 200
 
     allModels = Models.query.all()
@@ -343,6 +386,32 @@ def pelatihan():
     for model in allModels:
         model_data = model.serialize()
         model_data["losses"] = json.loads(model.losses) if model.losses else {}
+
+        # Handle rmse_scores for backward compatibility
+        if hasattr(model, "rmse_scores") and model.rmse_scores:
+            model_data["rmse_scores"] = json.loads(model.rmse_scores)
+        else:
+            # For old models without rmse_scores, calculate from stored test data
+            model_data["rmse_scores"] = {}
+            mapel = Mapel.query.all()
+            for m in mapel:
+                try:
+                    # Try to load test data and calculate RMSE
+                    X_test = pickle.load(
+                        open(f"model/{model.nama}/{m.kode}_X_test.pkl", "rb")
+                    )
+                    y_test = pickle.load(
+                        open(f"model/{model.nama}/{m.kode}_y_test.pkl", "rb")
+                    )
+                    y_pred = pickle.load(
+                        open(f"model/{model.nama}/{m.kode}_y_pred.pkl", "rb")
+                    )
+                    rmse = root_mean_squared_error(y_test, y_pred)
+                    model_data["rmse_scores"][m.kode] = rmse
+                except:
+                    # If files don't exist or error, use fallback
+                    model_data["rmse_scores"][m.kode] = None
+
         mapel = Mapel.query.all()
         for m in mapel:
             model_data[m.kode] = {}
@@ -576,25 +645,72 @@ def prediksi():
 
     model = {}
     kode = ["indo", "mtk", "inggris"]
+
+    # Load models and get training RMSE for comparison
+    rmse_training = {}
+    rmse_prediction = {}
+
     for m in kode:
         model[m] = pickle.load(open(f"model/{name}/{m}.pkl", "rb"))
 
+        # Load test data to get training RMSE (from model evaluation)
+        try:
+            X_test = pickle.load(open(f"model/{name}/{m}_X_test.pkl", "rb"))
+            y_test = pickle.load(open(f"model/{name}/{m}_y_test.pkl", "rb"))
+            y_pred_test = model[m].predict(X_test)
+            rmse_training[m] = root_mean_squared_error(y_test, y_pred_test)
+        except:
+            rmse_training[m] = None
+
     df = pd.read_excel(file)
 
+    # Handle missing values consistently with training data
     df[["jurusan", "nisn", "nama"]] = df[["jurusan", "nisn", "nama"]].fillna("-")
     for m in ["indo", "mtk", "inggris"]:
         for i in range(1, 5):
             df[f"{m}{i}"] = df[f"{m}{i}"].fillna(0)
 
+    # Make predictions and calculate RMSE for prediction data
     for m in kode:
         fitur = df[[f"{m}1", f"{m}2", f"{m}3", f"{m}4"]]
-        df[m] = model[m].predict(fitur)
+        df[f"{m}_prediksi"] = model[m].predict(fitur)
 
-    df.to_excel("flaskr/static/xlsx/prediksi.xlsx", index=False)
+        # Calculate RMSE for prediction data if actual values exist
+        ujian_col = f"{m}_ujian"
+        if ujian_col in df.columns:
+            # Remove rows with missing actual values for RMSE calculation
+            valid_rows = df[ujian_col].notna()
+            if valid_rows.sum() > 0:
+                actual_values = df.loc[valid_rows, ujian_col]
+                predicted_values = df.loc[valid_rows, f"{m}_prediksi"]
+                rmse_prediction[m] = root_mean_squared_error(
+                    actual_values, predicted_values
+                )
+            else:
+                rmse_prediction[m] = None
+        else:
+            rmse_prediction[m] = None
+
+    # Save results with comprehensive RMSE comparison
+    output_path = "flaskr/static/xlsx/prediksi.xlsx"
+    with pd.ExcelWriter(output_path, engine="openpyxl") as writer:
+        # Main prediction data
+        df.to_excel(writer, sheet_name="Prediksi", index=False)
+
+        # RMSE comparison sheet with clear labels
+        rmse_data = {
+            "Mapel": kode,
+            "Training_RMSE": [rmse_training.get(m, "N/A") for m in kode],
+            "Prediction_RMSE": [rmse_prediction.get(m, "N/A") for m in kode],
+        }
+        rmse_df = pd.DataFrame(rmse_data)
+        rmse_df.to_excel(writer, sheet_name="RMSE_Comparison", index=False)
 
     data = df.to_dict(orient="records")
 
     return {
         "toast": {"icon": "success", "title": "Data berhasil diprediksi"},
         "data": data,
+        "rmse_training": rmse_training,
+        "rmse_prediction": rmse_prediction,
     }, 200
